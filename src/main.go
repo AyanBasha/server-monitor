@@ -1,5 +1,6 @@
 package main
 
+/**
 import (
 	"fmt"
 	"time"
@@ -22,4 +23,4 @@ func main() {
 	fmt.Println("Service:", jellyfin.Name)
 	fmt.Println("URL:", jellyfin.URL)
 	fmt.Println("Timeout:", jellyfin.Timeout)
-}
+}**/
