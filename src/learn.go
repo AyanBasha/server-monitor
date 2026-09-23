@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	"math"
-	"math/rand"
+	//"math"
+	//"math/rand"
 	"math/cmplx"
+	"math/rand"
+	"math/rand/v2"
 )
 
 var stud, stuf, stug bool = true, false, false
@@ -36,8 +38,50 @@ func split(sum int) (x, y int) {
 	return
 }
 
+func checker(age, height, shoeSize int) int {
+	if v:=height/age; v == shoeSize {
+		return v
+	} else {
+
+	}
+
+	return shoeSize
+}
+
+func Sqrt (x float64) float64 {
+	var z = rand.Float64(int(x)+1)
+	z = float64(z)
+
+	for ; float64(z*z) != x; {
+		z -= (z*z - x) / (2*z)
+	} 
+	
+}
+
 func main() {
-	var x, y int = 3, 5
+	var sum int = 0
+	
+	for i := 0; i < 10; i++ {
+		sum += i
+	}
+
+	fmt.Println(sum)
+
+	fmt.Println("w/o init and post statements:")
+
+	for ; sum < 1000; {
+		sum += sum
+	}
+
+	fmt.Println(sum)
+
+	//for {}
+
+	if sum < 0 {
+		sum = -1*sum
+	}
+
+	/*var x, y int = 3, 5
 	var f float64 = math.Sqrt(float64(x*x+y*y))
 	var z uint = uint(f)
 	fmt.Println(x, y, z)
@@ -52,5 +96,5 @@ func main() {
 	fmt.Println(add(4, 2))
 	fmt.Println("My favorite number is", rand.Intn(10))
 	fmt.Printf("Now you have %g problems.\n", math.Sqrt(7))
-	fmt.Println(math.Pi)
+	fmt.Println(math.Pi)*/
 }
