@@ -2,22 +2,26 @@ package main
 
 import (
 	"fmt"
+	"runtime"
+
 	//"math"
 	//"math/rand"
 	"math/cmplx"
-	"math/rand"
-	"math/rand/v2"
+	//"math/rand"
+	//"math/rand/v2"
 )
 
 var stud, stuf, stug bool = true, false, false
 var i int = 3
+
 const Pi = 3.14
+
 //:= not available outside functions bc a keyword is required
 
 var (
-	ToBe bool = false
-	MaxInt uint64 = 1 << 64 -1
-	ToAst complex128 = cmplx.Sqrt(-5 + 12i)
+	ToBe   bool       = false
+	MaxInt uint64     = 1<<64 - 1
+	ToAst  complex128 = cmplx.Sqrt(-5 + 12i)
 )
 
 func add(x int, y int) int {
@@ -33,13 +37,13 @@ func swap(x, y int) (int, int) {
 }
 
 func split(sum int) (x, y int) {
-	x = sum/2
+	x = sum / 2
 	y = sum - x
 	return
 }
 
 func checker(age, height, shoeSize int) int {
-	if v:=height/age; v == shoeSize {
+	if v := height / age; v == shoeSize {
 		return v
 	} else {
 
@@ -48,19 +52,19 @@ func checker(age, height, shoeSize int) int {
 	return shoeSize
 }
 
-func Sqrt (x float64) float64 {
-	var z = rand.Float64(int(x)+1)
+/*func Sqrt (x float64) float64 {
+	//var z = rand.Float64(int(x)+1)
 	z = float64(z)
 
 	for ; float64(z*z) != x; {
 		z -= (z*z - x) / (2*z)
-	} 
-	
-}
+	}
+
+}*/
 
 func main() {
 	var sum int = 0
-	
+
 	for i := 0; i < 10; i++ {
 		sum += i
 	}
@@ -69,7 +73,7 @@ func main() {
 
 	fmt.Println("w/o init and post statements:")
 
-	for ; sum < 1000; {
+	for sum < 1000 {
 		sum += sum
 	}
 
@@ -78,8 +82,30 @@ func main() {
 	//for {}
 
 	if sum < 0 {
-		sum = -1*sum
+		sum = -1 * sum
 	}
+
+	defer fmt.Print("Go runs on")
+	switch os := runtime.GOOS; os {
+	case "darwin":
+		fmt.Println("MacOS.")
+	case "linux":
+		fmt.Println("Linux.")
+	default:
+		fmt.Printf("%s.\n", os)
+	}
+
+	for i := 0; i < 10; i += 3 {
+		defer fmt.Println(i)
+	}
+
+
+	//pointers
+	z := 4
+	p := &z
+
+	*p = *p/4
+
 
 	/*var x, y int = 3, 5
 	var f float64 = math.Sqrt(float64(x*x+y*y))
