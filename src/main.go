@@ -1,6 +1,6 @@
 package main
 
-/**
+
 import (
 	"fmt"
 	"time"
@@ -12,7 +12,7 @@ type Service struct {
 	Timeout time.Duration
 }
 
-func main() {
+func runServerMonitor() {
 	jellyfin := Service{
 		Name:    "Jellyfin",
 		URL:     "http://192.168.5.14:8096",
@@ -23,4 +23,4 @@ func main() {
 	fmt.Println("Service:", jellyfin.Name)
 	fmt.Println("URL:", jellyfin.URL)
 	fmt.Println("Timeout:", jellyfin.Timeout)
-}**/
+}

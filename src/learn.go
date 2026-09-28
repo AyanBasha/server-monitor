@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"runtime"
+	//"runtime"
 
 	//"math"
 	//"math/rand"
@@ -52,6 +52,18 @@ func checker(age, height, shoeSize int) int {
 	return shoeSize
 }
 
+type Vertex struct {
+	X int
+	Y int
+}
+
+var (
+	v1 = Vertex{X: 0}
+	v2 = Vertex{1, 1}
+	v3 = Vertex{-1, 1}
+	p  = Vertex{}
+)
+
 /*func Sqrt (x float64) float64 {
 	//var z = rand.Float64(int(x)+1)
 	z = float64(z)
@@ -63,7 +75,55 @@ func checker(age, height, shoeSize int) int {
 }*/
 
 func main() {
-	var sum int = 0
+	fmt.Println(v1, v2, v3, p)
+
+	fmt.Println(Vertex{1, 2})
+
+	v1 := Vertex{1, 2}
+
+	p := &v1
+
+	(*p).X = 1e9
+
+	fmt.Println(v1)
+
+	//array
+
+	var array [10]int
+
+	array[0] = 1
+	//array 1 is made 0
+	array[2] = 2
+	array[3] = 3
+	fmt.Println(array[0], array[1], array[2])
+
+	primes := [6]int{2, 3, 5, 7, 11, 13}
+	fmt.Println(primes)
+
+//slice
+	var s []int = primes[1:4]
+	fmt.Println(s)
+
+	s = s[:0]
+
+	s = s[:4]
+
+	s = s[2:]
+
+	fmt.Println(len(s), cap(s))
+
+
+	a := make([]int, 5)
+
+	fmt.Println(cap(a))
+
+	b := make([]int, 0, 5)
+
+	fmt.Println(b)
+
+	a = append(a, 83110)
+
+	/*var sum int = 0
 
 	for i := 0; i < 10; i++ {
 		sum += i
