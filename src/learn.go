@@ -57,6 +57,25 @@ type Vertex struct {
 	Y int
 }
 
+type Coordinate struct {
+	Lat, Long float64
+}
+
+var m map[string]Coordinate
+
+var m1 = map[string]Coordinate{
+	"Google": Coordinate{
+		1, 2,
+	},
+	"russel": Coordinate{
+		2, 3,
+	},
+}
+
+var m2 = map[string]Coordinate{
+	"People": {40.23456, -72.523},
+}
+
 var (
 	v1 = Vertex{X: 0}
 	v2 = Vertex{1, 1}
@@ -75,6 +94,23 @@ var (
 }*/
 
 func main() {
+	map1 := make(map[string]int)
+
+	map1["Answer"] = 42
+	map1["Answer"] = 48
+
+	delete(map1, "Answer")
+
+	//elem, ok := map1["Answer1"]
+
+	m = make(map[string]Coordinate)
+
+	m["House1"] = Coordinate{
+		40.67857, 45.6875,
+	}
+
+	fmt.Println(m["House1"])
+
 	fmt.Println(v1, v2, v3, p)
 
 	fmt.Println(Vertex{1, 2})
@@ -100,7 +136,7 @@ func main() {
 	primes := [6]int{2, 3, 5, 7, 11, 13}
 	fmt.Println(primes)
 
-//slice
+	//slice
 	var s []int = primes[1:4]
 	fmt.Println(s)
 
@@ -111,7 +147,6 @@ func main() {
 	s = s[2:]
 
 	fmt.Println(len(s), cap(s))
-
 
 	a := make([]int, 5)
 
