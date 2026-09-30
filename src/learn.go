@@ -93,7 +93,7 @@ var (
 
 }*/
 
-func main() {
+func runLearn() {
 	map1 := make(map[string]int)
 
 	map1["Answer"] = 42
