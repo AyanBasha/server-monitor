@@ -1,12 +1,11 @@
 package main
 
-
 import (
 	"fmt"
-	"time"
-	"net/http"
-	"log"
 	"io"
+	"log"
+	"net/http"
+	"time"
 )
 
 type Service struct {
@@ -71,16 +70,14 @@ var (
 	}
 )
 
-
 var services = []Service{proxmox, jellyfin, ha, crafty, immich}
 
-
 func runServerMonitor() {
-	
+
 	fmt.Println("Server Monitor is starting...")
 
 	for _, service := range services {
-	 
+
 		fmt.Println("Service:", service.Name)
 		fmt.Println("URL:", service.URL)
 		fmt.Println("Timeout:", service.Timeout)
