@@ -42,25 +42,25 @@ var (
 	proxmox = Service{
 		Name:    "Proxmox",
 		URL:     "http://192.168.5.14:8096",
-		Timeout: 3 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 
 	jellyfin = Service{
 		Name:    "Jellyfin",
 		URL:     "http://192.168.5.14:8096",
-		Timeout: 3 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 
 	ha = Service{
 		Name:    "Home Assistant",
 		URL:     "http://192.168.5.14:8096",
-		Timeout: 3 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 
 	crafty = Service{
 		Name:    "Crafty",
 		URL:     "http://192.168.5.14:8096",
-		Timeout: 3 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 
 	immich = Service{
