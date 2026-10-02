@@ -70,15 +70,15 @@ var (
 	}
 
 	piHole = Service{
-		Name:   "Pi-hole",
-		URL:	"http://192.168.5.5/admin",
+		Name:    "Pi-hole",
+		URL:     "http://192.168.5.5/admin",
 		Timeout: 5 * time.Second,
 	}
 )
 
 var services = []Service{proxmox, jellyfin, ha, crafty, immich, piHole}
 
-func getUrlStatus(service Service) bool { 
+func getUrlStatus(service Service) bool {
 	client := http.Client{
 		Timeout: service.Timeout,
 	}
@@ -102,7 +102,6 @@ func getUrlStatus(service Service) bool {
 }
 
 func runServerMonitor() {
-
 
 	fmt.Println("Server Monitor is starting...")
 
