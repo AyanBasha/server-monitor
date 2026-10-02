@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
+	//"io"
 	"log"
 	"net/http"
 	"time"
@@ -14,7 +14,7 @@ type Service struct {
 	Timeout time.Duration
 }
 
-func getNetData(url string) int {
+/**func getNetData(url string) int {
 	response, err := http.Get(url)
 
 	if err != nil {
@@ -36,7 +36,7 @@ func getNetData(url string) int {
 	}
 
 	return
-}
+}**/
 
 var (
 	proxmox = Service{
@@ -72,7 +72,31 @@ var (
 
 var services = []Service{proxmox, jellyfin, ha, crafty, immich}
 
+func getUrlStatus(url string) bool { 
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	req, err := http.NewRequest("HEAD", url, nil)
+
+	if err != nil {
+		log.Fatal(err)
+		return false
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+		return false
+	}
+
+	defer resp.Body.Close()
+
+	return resp.StatusCode >= 200 && resp.StatusCode < 400
+}
+
 func runServerMonitor() {
+
 
 	fmt.Println("Server Monitor is starting...")
 
@@ -80,6 +104,7 @@ func runServerMonitor() {
 
 		fmt.Println("Service:", service.Name)
 		fmt.Println("URL:", service.URL)
+		fmt.Println("Up?:", getUrlStatus(service.URL))
 		fmt.Println("Timeout:", service.Timeout)
 		fmt.Println("\n")
 	}
