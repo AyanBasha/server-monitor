@@ -78,12 +78,12 @@ var (
 
 var services = []Service{proxmox, jellyfin, ha, crafty, immich, piHole}
 
-func getUrlStatus(url string) bool { 
+func getUrlStatus(service Service) bool { 
 	client := http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: service.Timeout,
 	}
 
-	req, err := http.NewRequest("HEAD", url, nil)
+	req, err := http.NewRequest("HEAD", service.URL, nil)
 
 	if err != nil {
 		log.Fatal(err)
@@ -110,7 +110,7 @@ func runServerMonitor() {
 
 		fmt.Println("Service:", service.Name)
 		fmt.Println("URL:", service.URL)
-		fmt.Println("Up?:", getUrlStatus(service.URL))
+		fmt.Println("Up?:", getUrlStatus(service))
 		//fmt.Println("Timeout:", service.Timeout)
 		fmt.Println("\n")
 	}
