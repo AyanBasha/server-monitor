@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+
 	//"io"
 	"log"
 	"net/http"
@@ -77,6 +79,27 @@ var (
 )
 
 var services = []Service{proxmox, jellyfin, ha, crafty, immich, piHole}
+
+func encode(services []Service) ([]byte, error) {
+	b, err := json.MarshalIndent(services, "", " ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal services: %w", err)
+	}
+
+	return b, nil
+}
+
+func decode(b []byte) ([]Service, error) {
+	var services []Service
+
+	err := json.Unmarshal(b, &services)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal services %w", err)
+	}
+
+	return services, nil
+}
 
 func getUrlStatus(service Service) bool {
 	client := http.Client{
