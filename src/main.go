@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net"
+
+	//"net"
 	"io"
 	"log"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 	"time"
 	//"://tailscale.com"
 )
+
+var httpClient *http.Client
 
 type Duration struct {
 	time.Duration
@@ -21,7 +24,7 @@ func (d Duration) MarshalJSON() ([]byte, error) {
 }
 
 func (d *Duration) UnmarshalJSON(b []byte) error {
-	var v interface {}
+	var v interface{}
 	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
@@ -37,13 +40,13 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 }
 
 type Service struct {
-	Name    string         `json:"name"`
-	URL     string         `json:"url"`
-	Timeout time.Duration  `json:"timeout"`
+	Name    string        `json:"name"`
+	URL     string        `json:"url"`
+	Timeout time.Duration `json:"timeout"`
 }
 
 /**func loadServices(filename String) ([]String, error) {
-	
+
 }**/
 
 /**func getNetData(url string) int {
@@ -131,8 +134,6 @@ func decode(b []byte) ([]Service, error) {
 	return services, nil
 }
 
-
-
 func getUrlStatus(service Service) bool {
 	client := http.Client{
 		Timeout: service.Timeout,
@@ -167,7 +168,7 @@ func runServerMonitor(w io.Writer) {
 		fmt.Fprintln(w, "URL:", service.URL)
 		fmt.Fprintln(w, "Accessible?:", getUrlStatus(service))
 		//fmt.Println("Timeout:", service.Timeout)
-		fmt.Fprintln(w, "\n")
+		fmt.Fprintln(w)
 	}
 }
 
@@ -177,7 +178,7 @@ func dashHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method != "GET"{
+	if r.Method != "GET" {
 		http.Error(w, "method is not supported", http.StatusMethodNotAllowed)
 		return
 	}
@@ -212,50 +213,23 @@ func errorOutput(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	var httpClient *http.Client
-	var ln net.Listener
-	var err error
+	httpClient = &http.Client{
+		Timeout: 5 * time.Second,
+	}
 
-
-	fmt.Println("Running check in terminal")
-
+	// Run initial status check in terminal at startup
+	fmt.Println("Running check in terminal:")
 	runServerMonitor(os.Stdout)
 
-	fileServer := http.FileServer(http.Dir("./static"))
+	// Set up HTTP routes
+	fileServer := http.FileServer(http.Dir("./templates"))
 	http.Handle("/", fileServer)
 	http.HandleFunc("/form", formHandler)
 	http.HandleFunc("/dashboard", dashHandler)
 
-	fmt.Println("Starting server at port 8080")
-	
-	if err := http.ListenAndServe(":8080", nil); err !=nil {
+	// Start server (blocking call placed last)
+	fmt.Println("Starting server at port 8081...")
+	if err := http.ListenAndServe(":8081", nil); err != nil {
 		log.Fatal(err)
 	}
-	
-	if os.Getenv("TAILSCALE_ENABLED") == "true" {
-		fmt.Println("Initializing embedded Tailscale network...")
-
-		srv := &tsnet.Server{
-			Hostname: "universal-checker",
-			AuthKey: os.Getenv("TS_AUTHKEY"),
-		}
-
-		defer srv.close()
-
-		httpClient = &http.Client{
-			Transport: &http.Transport{
-				DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
-					return srv.Dial(ctx, network, address)
-				},
-			},
-			Timeout: 5*time.Second,
-		}
-	} else {
-		fmt.Println("Using standard system network...")
-		
-		httpClient = &http.Client{
-			Timeout: 5*time.Second,
-		}
-	}
-
 }
