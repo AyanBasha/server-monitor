@@ -139,17 +139,30 @@ func runServerMonitor() {
 }
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
-	
+	if r.URL.Path != "/dashboard" {
+		http.Error(w, "404 not found", http.StatusNotFound)
+		return
+	}
+
+	if r.Method != "GET"{
+		http.Error(w, "method is not supported", http.StatusNotFound)
+		return
+	}
+
+	fmt.FPrintln(w, runServerMonitor())
 }
 
-func formHandler() {}
+func formHandler(w http.ResponseWriter, r *http.Request) {
+	// Implementation for form handler
+}
 
 func main() {
 	runServerMonitor()
 
 	fileServer := http.FileServer(http.Dir("./static"))
-	http.Handle("/", formHandler)
-	http.Handle("/hello", helloHandler)
+	http.Handle("/", fileServer)
+	http.HandleFunc("/", formHandler)
+	http.HandleFunc("/hello", helloHandler)
 
 	fmt.Println("Starting server at port 8080")
 	
