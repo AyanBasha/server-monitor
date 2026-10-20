@@ -138,31 +138,40 @@ func runServerMonitor() {
 	}
 }
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
+func dashHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/dashboard" {
 		http.Error(w, "404 not found", http.StatusNotFound)
 		return
 	}
 
 	if r.Method != "GET"{
-		http.Error(w, "method is not supported", http.StatusNotFound)
+		http.Error(w, "method is not supported", http.StatusMethodNotAllowed)
 		return
 	}
 
-	fmt.FPrintln(w, runServerMonitor())
+	fmt.Fprintf(w, "You have reached your dashboard")
 }
 
 func formHandler(w http.ResponseWriter, r *http.Request) {
-	// Implementation for form handler
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+	fmt.Fprintf(w, "POST request successful")
+	name := r.FormValue("Service Name")
+	address := r.FormValue("IP Address")
+	fmt.Fprintf(w, "Service Name = %s\n", name)
+	fmt.Fprintf(w, "IP Address = %s\n", address)
+
 }
 
 func main() {
-	runServerMonitor()
+	//runServerMonitor()
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fileServer)
-	http.HandleFunc("/", formHandler)
-	http.HandleFunc("/hello", helloHandler)
+	http.HandleFunc("/form", formHandler)
+	http.HandleFunc("/dashboard", dashHandler)
 
 	fmt.Println("Starting server at port 8080")
 	
