@@ -8,12 +8,27 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"os"
+	//"tailscale.com/tsnet"
 )
 
+type Duration struct {
+	time.Duration
+}
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
+}
+
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var v interface {}
+	
+}
+
 type Service struct {
-	Name    string
-	URL     string
-	Timeout time.Duration
+	Name    string         `json:"name"`
+	URL     string         `json:"url"`
+	Timeout time.Duration  `json:"timeout"`
 }
 
 /**func getNetData(url string) int {
@@ -101,6 +116,10 @@ func decode(b []byte) ([]Service, error) {
 	return services, nil
 }
 
+
+
+
+
 func getUrlStatus(service Service) bool {
 	client := http.Client{
 		Timeout: service.Timeout,
@@ -109,13 +128,13 @@ func getUrlStatus(service Service) bool {
 	req, err := http.NewRequest("HEAD", service.URL, nil)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error creating request %s: %v", service.Name, err)
 		return false
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error checking status %s: %v", service.Name, err)
 		return false
 	}
 
