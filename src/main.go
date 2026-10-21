@@ -22,13 +22,28 @@ func (d Duration) MarshalJSON() ([]byte, error) {
 
 func (d *Duration) UnmarshalJSON(b []byte) error {
 	var v interface {}
-	
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+
+	switch value := v.(type) {
+	case string:
+		var err error
+		d.Duration, err = time.ParseDuration(value)
+		return err
+	default:
+		return fmt.Errorf("invalid duration type")
+	}
 }
 
 type Service struct {
 	Name    string         `json:"name"`
 	URL     string         `json:"url"`
 	Timeout time.Duration  `json:"timeout"`
+}
+
+func loadServices(filename String) ([]String, error) {
+	
 }
 
 /**func getNetData(url string) int {
