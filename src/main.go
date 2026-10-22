@@ -133,8 +133,6 @@ func decode(b []byte) ([]Service, error) {
 
 
 
-
-
 func getUrlStatus(service Service) bool {
 	client := http.Client{
 		Timeout: service.Timeout,
