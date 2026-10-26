@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 
 	//"io"
 	"log"
 	"net/http"
-	"time"
 	"os"
-	//"tailscale.com/tsnet"
+	"time"
+	//"://tailscale.com"
 )
 
 type Duration struct {
@@ -42,9 +43,9 @@ type Service struct {
 	Timeout time.Duration  `json:"timeout"`
 }
 
-func loadServices(filename String) ([]String, error) {
+/**func loadServices(filename String) ([]String, error) {
 	
-}
+}**/
 
 /**func getNetData(url string) int {
 	response, err := http.Get(url)
@@ -164,7 +165,7 @@ func runServerMonitor() {
 
 		fmt.Println("Service:", service.Name)
 		fmt.Println("URL:", service.URL)
-		fmt.Println("Up?:", getUrlStatus(service))
+		fmt.Println("Accessible?:", getUrlStatus(service))
 		//fmt.Println("Timeout:", service.Timeout)
 		fmt.Println("\n")
 	}
@@ -198,7 +199,13 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	//runServerMonitor()
+	//var httpClient *http.Client
+	var ln net.Listener
+	var err error
+
+	runServerMonitor()
+
+	
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fileServer)
@@ -210,4 +217,31 @@ func main() {
 	if err := http.ListenAndServe(":8080", nil); err !=nil {
 		log.Fatal(err)
 	}
+	
+	if os.Getenv("TAILSCALE_ENABLED") == "true" {
+		fmt.Println("Initializing embedded Tailscale network...")
+
+		srv := &tsnet.Server{
+			Hostname: "universal-checker",
+			AuthKey: os.Getenv("TS_AUTHKEY"),
+		}
+
+		defer srv.close()
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+					return srv.Dial(ctx, network, address)
+				},
+			},
+			Timeout: 5*time.Second,
+		}
+	} else {
+		fmt.Println("Using standard system network...")
+		
+		httpClient = &http.Client{
+			Timeout: 5*time.Second,
+		}
+	}
+
 }
