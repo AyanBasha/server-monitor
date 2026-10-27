@@ -198,6 +198,18 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func errorOutput(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/console" {
+		http.Error(w, "404 not found", http.StatusNotFound)
+	}
+
+	if r.Method != "GET" {
+		http.Error(w, "method not supported", http.StatusMethodNotAllowed)
+	}
+
+	fmt.Fprintf(w, "Console")
+}
+
 func main() {
 	//var httpClient *http.Client
 	var ln net.Listener
