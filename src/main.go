@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-
-	//"io"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -157,17 +156,18 @@ func getUrlStatus(service Service) bool {
 	return resp.StatusCode >= 200 && resp.StatusCode < 400
 }
 
-func runServerMonitor() {
+func runServerMonitor(w io.Writer) {
 
-	fmt.Println("Server Monitor is starting...")
+	fmt.Fprintln(w, "=+=+= Server Monitor =+=+=")
+	fmt.Fprintln(w)
 
 	for _, service := range services {
 
-		fmt.Println("Service:", service.Name)
-		fmt.Println("URL:", service.URL)
-		fmt.Println("Accessible?:", getUrlStatus(service))
+		fmt.Fprintln(w, "Service:", service.Name)
+		fmt.Fprintln(w, "URL:", service.URL)
+		fmt.Fprintln(w, "Accessible?:", getUrlStatus(service))
 		//fmt.Println("Timeout:", service.Timeout)
-		fmt.Println("\n")
+		fmt.Fprintln(w, "\n")
 	}
 }
 
@@ -182,7 +182,8 @@ func dashHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "You have reached your dashboard")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	runServerMonitor(w)
 }
 
 func formHandler(w http.ResponseWriter, r *http.Request) {
@@ -211,13 +212,14 @@ func errorOutput(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	//var httpClient *http.Client
+	var httpClient *http.Client
 	var ln net.Listener
 	var err error
 
-	runServerMonitor()
 
-	
+	fmt.Println("Running check in terminal")
+
+	runServerMonitor(os.Stdout)
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fileServer)
