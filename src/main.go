@@ -198,6 +198,8 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Service Name = %s\n", name)
 	fmt.Fprintf(w, "IP Address = %s\n", address)
 
+	
+
 }
 
 func errorOutput(w http.ResponseWriter, r *http.Request) {
