@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"crypto/tls"
 )
 
 // ---------------------------------------------------------------------------
@@ -75,11 +75,15 @@ func snapshotServices() []Service {
 func getUrlStatus(service Service) bool {
 	client := http.Client{Timeout: service.Timeout}
 
+	if service.SkipTLSVerify {
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+	}
 
-
-	
-
-	req, err := http.NewRequest(http.MethodHead, service.URL, nil)
+	req, err := http.NewRequest(http.MethodGet, service.URL, nil)
 	if err != nil {
 		log.Printf("Error creating request %s: %v", service.Name, err)
 		return false
