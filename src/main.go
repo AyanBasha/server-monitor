@@ -127,10 +127,53 @@ func deleteService(id int) bool {
 	return false
 }
 
-/**func updateService(id int) bool {
+//HERER
+
+func serviceFromForm(r *http.Request) (Service, error) {
+	if err := r.ParseForm(); err != nil {
+		return Service{}, fmt.Errorf("could not parse form: %w", err)
+	}
+
+	name := strings.TrimSpace(r.FormValue("name"))
+	rawURL := strings.TrimSpace(r.FormValue("url"))
+
+	if name == "" || rawURL == "" {
+		return Service{}, fmt.Errorf("name and url are both required")
+	}
+
+	if !strings.Contains(rawURL, "://") {
+		rawURL = "http://" + rawURL
+	}
+
+	u, err := url.ParseRequestURI(rawURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return Service{}, fmt.Errorf("invalid url: %s", rawURL)
+	}
+
+	skipTLS := "" != r.FormValue("skipTLS")
+
+	return Service{
+		Name:          name,
+		URL:           u.String(),
+		Timeout:       5 * time.Second,
+		SkipTLSVerify: skipTLS,
+	}, nil
+}
+
+func updateService(id int, updated Service) bool {
 	servicesMu.Lock()
 	defer servicesMu.Unlock()
-}**/
+
+	for i, s := range services {
+		if s.ID == id {
+			updated.ID = id
+			services[i] = updated
+			return true
+		}
+	}
+
+	return false
+}
 
 // ---------------------------------------------------------------------------
 // Checking
@@ -230,45 +273,20 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/dashboard", http.StatusFound)
 }
 
-// GET /form -> show the HTML form
 func formPageHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, templatesDir+"/form.html")
 }
 
-// POST /form -> validate, add the service, redirect to the dashboard
 func formSubmitHandler(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "could not parse form: "+err.Error(), http.StatusBadRequest)
+	s, err := serviceFromForm(r)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// These keys must match the name="" attributes in form.html.
-	name := strings.TrimSpace(r.FormValue("name"))
-	rawURL := strings.TrimSpace(r.FormValue("url"))
-
-	if name == "" || rawURL == "" {
-		http.Error(w, "name and url are both required", http.StatusBadRequest)
-		return
-	}
-
-	if !strings.Contains(rawURL, "://") {
-		rawURL = "http://" + rawURL
-	}
-
-	u, err := url.ParseRequestURI(rawURL)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		http.Error(w, "invalid url: "+rawURL, http.StatusBadRequest)
-		return
-	}
-
-	skipTLS := "" != r.FormValue("skipTLS")
-
-	addService(Service{Name: name, URL: u.String(), Timeout: 5 * time.Second, SkipTLSVerify: skipTLS})
-	log.Printf("Added service %q -> %s", name, u.String())
-
-	// 303 See Other tells the browser: "now GET this other page".
-	// This is the Post/Redirect/Get pattern — refreshing the dashboard
-	// won't re-submit the form.
+	addService(s)
+	log.Printf("Added service %q -> %s", s.Name, s.URL)
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 

@@ -14,7 +14,17 @@
 
                 <details>
                     <summary>info</summary>
-                    {{.Service.URL}}
+                        <form method="POST" action="/edit">
+                            <input type = "hidden" name="ID" value = "{{.Service.ID}}"/>
+                            <label>Name <input name="name" type="text" value="{{.Service.Name}} required"/></label>
+                            <label>URL  <input name="url" type="text" value="{{.Service.URL}} required"/></label>
+                            <label>
+                                <input type="checkbox" name="skipTLS" {{if .Service.SkipTLSVerify}}checked{{end}}/>
+                                Self-signed certificate
+                            </label>
+                            <button type="submit">Save</button>
+                        </form>
+                   
                 </details>
 
                 <details>
