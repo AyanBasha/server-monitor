@@ -3,11 +3,13 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,11 +32,42 @@ const templatesDir = "./templates"
 // Data model
 // ---------------------------------------------------------------------------
 
+type status int
+
+const (
+	down status = iota
+	unusual
+	up
+	checkConfig
+)
+
+func (s status) String() string {
+	switch s {
+	case down:
+		return "Service is down"
+	case unusual:
+		return "Up, but unusual"
+	case up:
+		return "Service is up"
+	case checkConfig:
+		return "check service configuration"
+	}
+
+	return "unknown status"
+}
+
 type Service struct {
 	Name          string        `json:"name"`
 	URL           string        `json:"url"`
 	Timeout       time.Duration `json:"timeout"`
 	SkipTLSVerify bool          `json:"skip_tls_verify"`
+	ID            int           `json:"ID"`
+}
+
+type CheckResult struct {
+	Service Service
+	Status  status
+	Message string
 }
 
 // services is shared between HTTP handlers. Go's http server runs every
@@ -42,18 +75,16 @@ type Service struct {
 // same time. servicesMu makes sure only one goroutine reads/writes at once.
 var (
 	servicesMu sync.Mutex
-	services   = []Service{
-		{Name: "Proxmox", URL: "https://192.168.5.26:8006", Timeout: 5 * time.Second, SkipTLSVerify: true},
-		{Name: "Jellyfin", URL: "http://192.168.5.14:8096", Timeout: 5 * time.Second},
-		{Name: "Home Assistant", URL: "http://192.168.5.9:80", Timeout: 5 * time.Second},
-		{Name: "Pi-hole", URL: "http://192.168.5.5/admin", Timeout: 5 * time.Second},
-	}
+	services   []Service
+	nextID     int
 )
 
 // addService appends under the lock.
 func addService(s Service) {
 	servicesMu.Lock()
 	defer servicesMu.Unlock()
+	s.ID = nextID
+	nextID++
 	services = append(services, s)
 }
 
@@ -68,11 +99,44 @@ func snapshotServices() []Service {
 	return out
 }
 
+func checkAll() []CheckResult {
+	var results []CheckResult
+
+	for _, service := range snapshotServices() {
+		st, msg := getUrlStatus(service)
+		results = append(results, CheckResult{
+			Service: service,
+			Status:  st,
+			Message: msg,
+		})
+	}
+
+	return results
+}
+
+func deleteService(id int) bool {
+	servicesMu.Lock()
+	defer servicesMu.Unlock()
+
+	for i, s := range services {
+		if s.ID == id {
+			services = append(services[:i], services[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+/**func updateService(id int) bool {
+	servicesMu.Lock()
+	defer servicesMu.Unlock()
+}**/
+
 // ---------------------------------------------------------------------------
 // Checking
 // ---------------------------------------------------------------------------
 
-func getUrlStatus(service Service) bool {
+func getUrlStatus(service Service) (status, string) {
 	client := http.Client{Timeout: service.Timeout}
 
 	if service.SkipTLSVerify {
@@ -86,19 +150,28 @@ func getUrlStatus(service Service) bool {
 	req, err := http.NewRequest(http.MethodGet, service.URL, nil)
 	if err != nil {
 		log.Printf("Error creating request %s: %v", service.Name, err)
-		return false
+		return checkConfig, fmt.Sprintf("Error creating request: %v", err)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Error checking status %s: %v", service.Name, err)
-		return false
+		return down, fmt.Sprintf("Error checking status: %v", err)
 	}
 	defer resp.Body.Close()
+	//put a dropdown next to the status up or down and output this message
 
-	log.Printf("[%s] HTTP %d", service.Name, resp.StatusCode)
+	result := down
 
-	return resp.StatusCode >= 200 && resp.StatusCode < 400
+	if resp.StatusCode < 400 {
+		result = up
+	} else if resp.StatusCode < 500 {
+		result = unusual
+	} else if resp.StatusCode >= 500 {
+		result = down
+	}
+
+	return result, fmt.Sprintf("HTTP %d", resp.StatusCode)
 }
 
 func runServerMonitor(w io.Writer) {
@@ -108,14 +181,48 @@ func runServerMonitor(w io.Writer) {
 	for _, service := range snapshotServices() {
 		fmt.Fprintln(w, "Service:", service.Name)
 		fmt.Fprintln(w, "URL:", service.URL)
-		fmt.Fprintln(w, "Accessible?:", getUrlStatus(service))
+
+		serviceStatus, detail := getUrlStatus(service)
+		fmt.Fprintln(w, "Status:", serviceStatus)
+		fmt.Fprintln(w, detail)
+
 		fmt.Fprintln(w)
 	}
 }
 
+func deleteHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.FormValue("ID"))
+	if err != nil {
+		http.Error(w, "invalid service ID", http.StatusBadRequest)
+		return
+	}
+
+	if !deleteService(id) {
+		http.Error(w, "service not found", http.StatusNotFound)
+		return
+	}
+
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+}
+
 func dashHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	runServerMonitor(w)
+	// 1. Load the template
+	tmpl, err := template.ParseFiles(templatesDir + "/dashboard.html")
+	if err != nil {
+		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Run the checks
+	results := checkAll()
+
+	// 3. Tell the browser it's HTML
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// 4. Fill in the template and send it
+	if err := tmpl.Execute(w, results); err != nil {
+		log.Printf("template execute error: %v", err)
+	}
 }
 
 // GET /form -> show the HTML form
@@ -149,7 +256,9 @@ func formSubmitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addService(Service{Name: name, URL: u.String(), Timeout: 5 * time.Second})
+	skipTLS := "" != r.FormValue("skipTLS")
+
+	addService(Service{Name: name, URL: u.String(), Timeout: 5 * time.Second, SkipTLSVerify: skipTLS})
 	log.Printf("Added service %q -> %s", name, u.String())
 
 	// 303 See Other tells the browser: "now GET this other page".
@@ -166,6 +275,7 @@ func main() {
 	mux.HandleFunc("GET /dashboard", dashHandler)
 	mux.HandleFunc("GET /form", formPageHandler)
 	mux.HandleFunc("POST /form", formSubmitHandler)
+	mux.HandleFunc("POST /delete", deleteHandler)
 
 	// "/" is the catch-all: anything not matched above is looked up as a
 	// file in ./templates. "/" -> templates/index.html automatically.

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8"/>
+        <title>Dashboard - Server Monitor</title>
+    </head>
+    <body>
+        <h2>Dashboard</h2>
+
+        <ul>
+            {{range .}}
+            <li>
+                <a href="{{.Service.URL}}" target="_blank">{{.Service.Name}}</a>
+
+                <details>
+                    <summary>info</summary>
+                    {{.Service.URL}}
+                </details>
+
+                <details>
+                    <summary>{{.Status}}</summary>
+                    {{.Message}}
+                </details>
+
+                <form method="POST" action="/delete">
+                    <input type="hidden" name="ID" value="{{.Service.ID}}"/>
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+            {{else}}
+                <li><a href="/form">Add a service</a></li>
+            {{end}}
+
+        </ul>
+
+        <p><a href="/">Home</a> · <a href="/form">Add a service</a></p>
+    </body>
+</html>
