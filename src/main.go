@@ -223,6 +223,11 @@ func dashHandler(w http.ResponseWriter, r *http.Request) {
 	if err := tmpl.Execute(w, results); err != nil {
 		log.Printf("template execute error: %v", err)
 	}
+
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/dashboard", http.StatusFound)
 }
 
 // GET /form -> show the HTML form
@@ -272,14 +277,11 @@ func main() {
 
 	// Go 1.22+ patterns: "METHOD /path". The router rejects other methods
 	// with 405 for us, so the handlers don't need manual method checks.
+	mux.HandleFunc("GET /{$}", rootHandler)
 	mux.HandleFunc("GET /dashboard", dashHandler)
 	mux.HandleFunc("GET /form", formPageHandler)
 	mux.HandleFunc("POST /form", formSubmitHandler)
 	mux.HandleFunc("POST /delete", deleteHandler)
-
-	// "/" is the catch-all: anything not matched above is looked up as a
-	// file in ./templates. "/" -> templates/index.html automatically.
-	mux.Handle("/", http.FileServer(http.Dir(templatesDir)))
 
 	// Run the terminal check in the BACKGROUND (a goroutine). Before, this ran
 	// first and could block startup for 5s per unreachable service — painful
