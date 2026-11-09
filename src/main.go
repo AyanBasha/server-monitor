@@ -15,22 +15,11 @@ import (
 	"time"
 )
 
-// ---------------------------------------------------------------------------
-// Config
-// ---------------------------------------------------------------------------
+//------
 
-// listenAddr is where the web server listens. ":8080" means "every network
-// interface on port 8080", so other machines on your LAN can reach the LXC.
 const listenAddr = ":8090"
 
-// templatesDir is RELATIVE TO THE DIRECTORY YOU RUN THE PROGRAM FROM.
-// air runs from the project root, so "./templates" is right.
-// If you ever run `go run .` from inside src/, this would need "../templates".
 const templatesDir = "./templates"
-
-// ---------------------------------------------------------------------------
-// Data model
-// ---------------------------------------------------------------------------
 
 type status int
 
@@ -82,16 +71,14 @@ type CheckResult struct {
 	Message string
 }
 
-// services is shared between HTTP handlers. Go's http server runs every
-// request in its own goroutine, so two requests can touch this slice at the
-// same time. servicesMu makes sure only one goroutine reads/writes at once.
 var (
 	servicesMu sync.Mutex
 	services   []Service
 	nextID     int
 )
 
-// addService appends under the lock.
+//-----
+
 func addService(s Service) {
 	servicesMu.Lock()
 	defer servicesMu.Unlock()
@@ -101,9 +88,6 @@ func addService(s Service) {
 	saveLocked()
 }
 
-// snapshotServices returns a COPY of the slice. We hold the lock only long
-// enough to copy, then release it — so slow network checks (up to 5s each)
-// never block someone submitting the form.
 func snapshotServices() []Service {
 	servicesMu.Lock()
 	defer servicesMu.Unlock()
@@ -191,33 +175,29 @@ func updateService(id int, updated Service) bool {
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
-    // 1. Which service? (copy the first part of deleteHandler)
-    id, err := strconv.Atoi(r.FormValue("ID"))
-    if err != nil {
-        http.Error(w, "invalid service ID", http.StatusBadRequest)
-        return
-    }
+	// 1. Which service? (copy the first part of deleteHandler)
+	id, err := strconv.Atoi(r.FormValue("ID"))
+	if err != nil {
+		http.Error(w, "invalid service ID", http.StatusBadRequest)
+		return
+	}
 
-    // 2. What are the new values? (like formSubmitHandler)
-    updated, err := serviceFromForm(r)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
-        return
-    }
+	updated, err := serviceFromForm(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-    // 3. Apply the change
-    if !updateService(id, updated) {
-        http.Error(w, "service not found", http.StatusNotFound)
-        return
-    }
+	if !updateService(id, updated) {
+		http.Error(w, "service not found", http.StatusNotFound)
+		return
+	}
 
-    log.Printf("Updated service %d -> %q %s", id, updated.Name, updated.URL)
-    http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	log.Printf("Updated service %d -> %q %s", id, updated.Name, updated.URL)
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
-// ---------------------------------------------------------------------------
-// Checking
-// ---------------------------------------------------------------------------
+//----
 
 func getUrlStatus(service Service) (status, string) {
 	client := http.Client{Timeout: service.Timeout}
@@ -242,7 +222,6 @@ func getUrlStatus(service Service) (status, string) {
 		return down, fmt.Sprintf("Error checking status: %v", err)
 	}
 	defer resp.Body.Close()
-	//put a dropdown next to the status up or down and output this message
 
 	result := down
 
@@ -289,20 +268,16 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func dashHandler(w http.ResponseWriter, r *http.Request) {
-	// 1. Load the template
 	tmpl, err := template.ParseFiles(templatesDir + "/dashboard.html")
 	if err != nil {
 		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 2. Run the checks
 	results := checkAll()
 
-	// 3. Tell the browser it's HTML
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	// 4. Fill in the template and send it
 	if err := tmpl.Execute(w, results); err != nil {
 		log.Printf("template execute error: %v", err)
 	}
@@ -337,8 +312,6 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// Go 1.22+ patterns: "METHOD /path". The router rejects other methods
-	// with 405 for us, so the handlers don't need manual method checks.
 	mux.HandleFunc("GET /{$}", rootHandler)
 	mux.HandleFunc("GET /dashboard", dashHandler)
 	mux.HandleFunc("GET /form", formPageHandler)
@@ -346,11 +319,8 @@ func main() {
 	mux.HandleFunc("POST /delete", deleteHandler)
 	mux.HandleFunc("POST /edit", editHandler)
 
-	   mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
-	// Run the terminal check in the BACKGROUND (a goroutine). Before, this ran
-	// first and could block startup for 5s per unreachable service — painful
-	// with air restarting on every save.
 	go func() {
 		fmt.Println("Running check in terminal")
 		runServerMonitor(os.Stdout)
@@ -358,12 +328,5 @@ func main() {
 
 	fmt.Println("Starting server on", listenAddr)
 
-	// ListenAndServe blocks forever (until error). Any code AFTER this line
-	// never runs — which is why the old Tailscale block was dead code.
 	log.Fatal(http.ListenAndServe(listenAddr, mux))
 }
-
-// TODO(tailscale): the tsnet setup that was here is parked. When you come
-// back to it, it has to run BEFORE ListenAndServe, needs imports for
-// "context" and "tailscale.com/tsnet" (`go get tailscale.com/tsnet`), and the
-// resulting httpClient must actually be used by getUrlStatus.
