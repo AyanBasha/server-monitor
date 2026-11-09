@@ -56,6 +56,18 @@ func (s status) String() string {
 	return "unknown status"
 }
 
+func (s status) Class() string {
+	switch s {
+	case up:
+		return "up"
+	case unusual:
+		return "unusual"
+	case checkConfig:
+		return "config"
+	}
+	return "down"
+}
+
 type Service struct {
 	Name          string        `json:"name"`
 	URL           string        `json:"url"`
@@ -86,6 +98,7 @@ func addService(s Service) {
 	s.ID = nextID
 	nextID++
 	services = append(services, s)
+	saveLocked()
 }
 
 // snapshotServices returns a COPY of the slice. We hold the lock only long
@@ -121,6 +134,7 @@ func deleteService(id int) bool {
 	for i, s := range services {
 		if s.ID == id {
 			services = append(services[:i], services[i+1:]...)
+			saveLocked()
 			return true
 		}
 	}
@@ -168,11 +182,37 @@ func updateService(id int, updated Service) bool {
 		if s.ID == id {
 			updated.ID = id
 			services[i] = updated
+			saveLocked()
 			return true
 		}
 	}
 
 	return false
+}
+
+func editHandler(w http.ResponseWriter, r *http.Request) {
+    // 1. Which service? (copy the first part of deleteHandler)
+    id, err := strconv.Atoi(r.FormValue("ID"))
+    if err != nil {
+        http.Error(w, "invalid service ID", http.StatusBadRequest)
+        return
+    }
+
+    // 2. What are the new values? (like formSubmitHandler)
+    updated, err := serviceFromForm(r)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    // 3. Apply the change
+    if !updateService(id, updated) {
+        http.Error(w, "service not found", http.StatusNotFound)
+        return
+    }
+
+    log.Printf("Updated service %d -> %q %s", id, updated.Name, updated.URL)
+    http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
 // ---------------------------------------------------------------------------
@@ -291,6 +331,10 @@ func formSubmitHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	if err := loadServices(); err != nil {
+		log.Fatalf("could not load %s: %v", dataFile, err)
+	}
+
 	mux := http.NewServeMux()
 
 	// Go 1.22+ patterns: "METHOD /path". The router rejects other methods
@@ -300,6 +344,9 @@ func main() {
 	mux.HandleFunc("GET /form", formPageHandler)
 	mux.HandleFunc("POST /form", formSubmitHandler)
 	mux.HandleFunc("POST /delete", deleteHandler)
+	mux.HandleFunc("POST /edit", editHandler)
+
+	   mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
 	// Run the terminal check in the BACKGROUND (a goroutine). Before, this ran
 	// first and could block startup for 5s per unreachable service — painful

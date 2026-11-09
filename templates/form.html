@@ -3,27 +3,29 @@
     <head>
         <meta charset="UTF-8"/>
         <title>Add Service - Server Monitor</title>
+        <link rel="stylesheet" href="/static/style.css"/>
     </head>
     <body>
-        <h2>Add a Service</h2>
-        <!-- name="" is the key Go reads with r.FormValue("...") -->
-        <form method="POST" action="/form">
-            <p>
-                <label for="name">Name</label>
-                <input id="name" name="name" type="text" placeholder="Jellyfin" required/>
-            </p>
-            <p>
-                <label for="url">URL</label>
-                <input id="url" name="url" type="text" placeholder="http://192.168.5.14:8096" required/>
-            </p>
-            <input type="submit" value="Add service"/>
-        <p>
-            <label>
-                <input type="checkbox" name="skipTLS"/>
-                Skip self-signed certificate verification? (Recommended for Proxmox)
-            </label>
-        </p>
-        </form>
-        <p><a href="/dashboard">Dashboard</a></p>
+        <nav>
+            <strong>Server Monitor</strong>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/form">Add a service</a>
+        </nav>
+
+        <div class="panel">
+            <h3>Add a service</h3>
+            <!-- name="" is the key Go reads with r.FormValue("...") -->
+            <form method="POST" action="/form">
+                <p>Name <input name="name" type="text" placeholder="Jellyfin" required/></p>
+                <p>URL <input name="url" type="text" placeholder="https://192.168.5.26:8006" required/></p>
+                <p>
+                    <label>
+                        <input type="checkbox" name="skipTLS"/>
+                        Self-signed certificate (e.g. Proxmox)
+                    </label>
+                </p>
+                <button class="primary" type="submit">Add service</button>
+            </form>
+        </div>
     </body>
 </html>

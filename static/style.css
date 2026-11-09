@@ -1,0 +1,96 @@
+/* Server Monitor — simple shared styles.
+   Colors live in :root so they're easy to change in one place. */
+
+:root {
+    --bg:     #f4f5f7;
+    --panel:  #ffffff;
+    --border: #dde1e6;
+    --text:   #1d2939;
+    --muted:  #667085;
+    --accent: #0b5fd6;
+
+    --up:      #12a150;
+    --unusual: #e0a100;
+    --down:    #d92d20;
+    --config:  #7a5af8;
+}
+
+body {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+}
+
+a { color: var(--accent); }
+
+/* Top navigation */
+nav {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+nav strong { margin-right: auto; }   /* pushes the links to the right */
+
+/* White box around the table / form */
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+}
+
+/* Services table */
+table { width: 100%; border-collapse: collapse; }
+th, td {
+    padding: 10px 8px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+}
+th { color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+
+.muted { color: var(--muted); font-size: 12px; }
+
+/* Dropdowns */
+summary { cursor: pointer; }
+details[open] summary { margin-bottom: 8px; }
+
+/* Status dot: the color comes from the status-* class on the parent */
+.dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 4px;
+}
+.status-up      .dot { background: var(--up); }
+.status-unusual .dot { background: var(--unusual); }
+.status-down    .dot { background: var(--down); }
+.status-config  .dot { background: var(--config); }
+
+/* Forms */
+form p { margin: 0 0 10px; }
+input[type="text"] {
+    display: block;          /* puts the box on its own line, under its label */
+    margin-top: 4px;
+    width: 100%;
+    max-width: 360px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font: inherit;
+}
+button {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--panel);
+    font: inherit;
+    cursor: pointer;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }

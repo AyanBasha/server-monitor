@@ -3,46 +3,69 @@
     <head>
         <meta charset="UTF-8"/>
         <title>Dashboard - Server Monitor</title>
+        <link rel="stylesheet" href="/static/style.css"/>
     </head>
     <body>
-        <h2>Dashboard</h2>
+        <nav>
+            <strong>Server Monitor</strong>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/form">Add a service</a>
+        </nav>
 
-        <ul>
-            {{range .}}
-            <li>
-                <a href="{{.Service.URL}}" target="_blank">{{.Service.Name}}</a>
+        <div class="panel">
+            <table>
+                <tr>
+                    <th>Service</th>
+                    <th>Edit</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
 
-                <details>
-                    <summary>info</summary>
-                        <form method="POST" action="/edit">
-                            <input type = "hidden" name="ID" value = "{{.Service.ID}}"/>
-                            <label>Name <input name="name" type="text" value="{{.Service.Name}} required"/></label>
-                            <label>URL  <input name="url" type="text" value="{{.Service.URL}} required"/></label>
-                            <label>
-                                <input type="checkbox" name="skipTLS" {{if .Service.SkipTLSVerify}}checked{{end}}/>
-                                Self-signed certificate
-                            </label>
-                            <button type="submit">Save</button>
+                {{range .}}
+                <tr>
+                    <td>
+                        <a href="{{.Service.URL}}" target="_blank">{{.Service.Name}}</a><br/>
+                        <span class="muted">{{.Service.URL}}</span>
+                    </td>
+
+                    <td>
+                        <details>
+                            <summary>info</summary>
+                            <form method="POST" action="/edit">
+                                <input type="hidden" name="ID" value="{{.Service.ID}}"/>
+                                <p>Name <input name="name" type="text" value="{{.Service.Name}}" required/></p>
+                                <p>URL <input name="url" type="text" value="{{.Service.URL}}" required/></p>
+                                <p>
+                                    <label>
+                                        <input type="checkbox" name="skipTLS" {{if .Service.SkipTLSVerify}}checked{{end}}/>
+                                        Self-signed certificate
+                                    </label>
+                                </p>
+                                <button class="primary" type="submit">Save</button>
+                            </form>
+                        </details>
+                    </td>
+
+                    <td>
+                        <details class="status-{{.Status.Class}}">
+                            <summary><span class="dot"></span>{{.Status}}</summary>
+                            <span class="muted">{{.Message}}</span>
+                        </details>
+                    </td>
+
+                    <td>
+                        <form method="POST" action="/delete">
+                            <input type="hidden" name="ID" value="{{.Service.ID}}"/>
+                            <button type="submit">Delete</button>
                         </form>
-                   
-                </details>
-
-                <details>
-                    <summary>{{.Status}}</summary>
-                    {{.Message}}
-                </details>
-
-                <form method="POST" action="/delete">
-                    <input type="hidden" name="ID" value="{{.Service.ID}}"/>
-                    <button type="submit">Delete</button>
-                </form>
-            </li>
-            {{else}}
-                <li><a href="/form">Add a service</a></li>
-            {{end}}
-
-        </ul>
-
-        <p><a href="/form">Add a service</a></p>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="4">No services yet. <a href="/form">Add a service</a></td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
     </body>
 </html>
